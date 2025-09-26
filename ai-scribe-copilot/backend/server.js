@@ -10,7 +10,74 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number.parseInt(process.env.PORT ?? '3000', 10);
+const PREFERRED_HOST = process.env.HOST || '::';
+const FALLBACK_HOST = '0.0.0.0';
+
+const IPV6_FALLBACK_ERRORS = new Set([
+  'EADDRNOTAVAIL',
+  'EAFNOSUPPORT',
+  'EINVAL',
+]);
+
+function formatAddressForUrl(addressInfo) {
+  if (!addressInfo || typeof addressInfo === 'string') {
+    return addressInfo || 'localhost';
+  }
+
+  const { address, family } = addressInfo;
+  if (family === 'IPv6') {
+    return `[${address}]`;
+  }
+  return address;
+}
+
+function logServerDetails(server) {
+  const addressInfo = server.address();
+  if (!addressInfo) {
+    console.log('AI Scribe Copilot Backend running.');
+    console.log(`Health check: http://localhost:${PORT}/health`);
+    return;
+  }
+
+  if (typeof addressInfo === 'string') {
+    console.log(`AI Scribe Copilot Backend running on ${addressInfo}`);
+    return;
+  }
+
+  const { address, family, port } = addressInfo;
+  const urlHost = formatAddressForUrl(addressInfo);
+
+  console.log(
+    `AI Scribe Copilot Backend listening on ${address}:${port} (${family}).`,
+  );
+  console.log(`Health check: http://${urlHost}:${port}/health`);
+}
+
+function startServer(host, { isFallback = false } = {}) {
+  const server = app.listen({ port: PORT, host, ipv6Only: false }, () => {
+    logServerDetails(server);
+  });
+
+  server.on('error', (error) => {
+    if (
+      !isFallback &&
+      host !== FALLBACK_HOST &&
+      IPV6_FALLBACK_ERRORS.has(error.code)
+    ) {
+      console.warn(
+        `Could not bind to ${host} (${error.code}). Falling back to ${FALLBACK_HOST}.`,
+      );
+      startServer(FALLBACK_HOST, { isFallback: true });
+      return;
+    }
+
+    console.error('Failed to start server:', error);
+    process.exitCode = 1;
+  });
+
+  return server;
+}
 
 // Middleware
 app.use(helmet());
@@ -248,9 +315,6 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`AI Scribe Copilot Backend running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-});
+startServer(PREFERRED_HOST);
 
 module.exports = app;

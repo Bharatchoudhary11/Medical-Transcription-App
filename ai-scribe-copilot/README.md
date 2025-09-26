@@ -54,6 +54,12 @@ A Flutter app that doctors can trust with their patient consultations. The app r
    docker-compose up -d
    ```
 
+   The mock server binds to IPv6 (`::`) by default so physical devices on
+   IPv6-only or dual-stack networks can reach it (the server automatically
+   falls back to IPv4 if IPv6 is unavailable). To force a specific interface,
+   set the `HOST` environment variable before launching the backend, e.g.
+   `HOST=0.0.0.0 npm start` for IPv4-only environments.
+
 4. **Run the app**
    ```bash
    # Android (emulator connects to 10.0.2.2 by default)
