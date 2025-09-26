@@ -48,16 +48,39 @@
 	<!-- Microphone permission -->
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs access to the microphone to record patient consultations for AI transcription.</string>
-	<!-- Background modes for audio recording -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
-		<string>background-processing</string>
-	</array>
-	<!-- Background app refresh -->
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>com.aiscribe.copilot.audio-upload</string>
-	</array>
+        <!-- Background modes for audio recording -->
+        <key>UIBackgroundModes</key>
+        <array>
+                <string>audio</string>
+                <string>background-processing</string>
+        </array>
+        <!-- Background app refresh -->
+        <key>BGTaskSchedulerPermittedIdentifiers</key>
+        <array>
+                <string>com.aiscribe.copilot.audio-upload</string>
+        </array>
+        <!-- Allow non-HTTPS traffic for local development backend -->
+        <key>NSAppTransportSecurity</key>
+        <dict>
+                <key>NSAllowsArbitraryLoads</key>
+                <false/>
+                <key>NSExceptionDomains</key>
+                <dict>
+                        <key>localhost</key>
+                        <dict>
+                                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                                <true/>
+                                <key>NSIncludesSubdomains</key>
+                                <true/>
+                        </dict>
+                        <key>127.0.0.1</key>
+                        <dict>
+                                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                                <true/>
+                                <key>NSIncludesSubdomains</key>
+                                <true/>
+                        </dict>
+                </dict>
+        </dict>
 </dict>
 </plist>
