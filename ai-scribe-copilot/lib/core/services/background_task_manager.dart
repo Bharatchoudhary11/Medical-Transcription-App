@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 
 import '../../utils/logger.dart';
 
@@ -29,7 +28,7 @@ class BackgroundTaskManager {
     final isRunning = await _service.isRunning();
     if (!isRunning) {
       logger.d('Starting background service');
-      await _service.startService();
+      _service.startService();
     }
   }
 
