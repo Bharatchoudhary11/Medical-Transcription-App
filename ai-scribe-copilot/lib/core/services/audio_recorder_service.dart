@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
@@ -24,7 +25,9 @@ class AudioRecorderService {
   final int chunkSizeBytes;
   final FlutterSoundRecorder _recorder;
   final StreamController<RecordingChunk> _chunkStreamController;
-  StreamSubscription? _recordingSubscription;
+  StreamSubscription<RecordingDisposition>? _recordingSubscription;
+  StreamController<Uint8List>? _pcmStreamController;
+  StreamSubscription<Uint8List>? _pcmStreamSubscription;
   String? _activeSessionId;
   int _chunkSequence = 0;
   final List<int> _buffer = <int>[];
@@ -40,6 +43,8 @@ class AudioRecorderService {
 
   Future<void> dispose() async {
     await _recordingSubscription?.cancel();
+    await _pcmStreamSubscription?.cancel();
+    await _pcmStreamController?.close();
     await _recorder.closeRecorder();
     await _chunkStreamController.close();
   }
@@ -60,14 +65,17 @@ class AudioRecorderService {
     final directory = await getTemporaryDirectory();
     _recordingSubscription?.cancel();
     _recordingSubscription = _recorder.onProgress?.listen(_onProgress);
+    await _pcmStreamSubscription?.cancel();
+    await _pcmStreamController?.close();
+    _pcmStreamController = StreamController<Uint8List>();
+    _pcmStreamSubscription = _pcmStreamController!.stream.listen((data) {
+      _buffer.addAll(data);
+      if (_buffer.length >= chunkSizeBytes) {
+        unawaited(_flushBuffer(directory));
+      }
+    });
     await _recorder.startRecorder(
-      toStream: (Food data) async {
-        if (data.buffer == null) return;
-        _buffer.addAll(data.buffer!);
-        if (_buffer.length >= chunkSizeBytes) {
-          await _flushBuffer(directory);
-        }
-      },
+      toStream: _pcmStreamController!.sink,
       codec: Codec.pcm16,
       numChannels: 1,
       sampleRate: 16000,
@@ -105,6 +113,10 @@ class AudioRecorderService {
     } else {
       _buffer.clear();
     }
+    await _pcmStreamSubscription?.cancel();
+    _pcmStreamSubscription = null;
+    await _pcmStreamController?.close();
+    _pcmStreamController = null;
     logger.i('Recording stopped for session $_activeSessionId');
     if (clearSession) {
       _activeSessionId = null;
