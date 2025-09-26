@@ -52,47 +52,49 @@ class PatientListScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(24),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.wifi_off,
-                      size: 48,
-                      color: colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Failed to load patients',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.wifi_off,
+                        size: 48,
                         color: colorScheme.error,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'The app could not reach the backend at $baseUrl.\n'
-                      '• Make sure the API server is running (e.g. `docker-compose up -d`).\n'
-                      '• If you are testing on a physical device, replace 10.0.2.2 with your computer\'s LAN IP and rebuild with:\n'
-                      '  flutter run --dart-define=API_BASE_URL=http://<your-ip>:3000/api\n'
-                      '• On IPv6 networks you can provide the components separately instead:\n'
-                      '  flutter run --dart-define=API_HOST=<ipv6-host> --dart-define=API_PORT=3000 --dart-define=API_PATH=api',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Details: $error',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load patients',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: () => ref.invalidate(_patientListProvider),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        'The app could not reach the backend at $baseUrl.\n'
+                        '• Make sure the API server is running (e.g. `docker-compose up -d`).\n'
+                        '• If you are testing on a physical device, replace 10.0.2.2 with your computer\'s LAN IP and rebuild with:\n'
+                        '  flutter run --dart-define=API_BASE_URL=http://<your-ip>:3000/api\n'
+                        '• On IPv6 networks you can provide the components separately instead:\n'
+                        '  flutter run --dart-define=API_HOST=<ipv6-host> --dart-define=API_PORT=3000 --dart-define=API_PATH=api',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Details: $error',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: () => ref.invalidate(_patientListProvider),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
