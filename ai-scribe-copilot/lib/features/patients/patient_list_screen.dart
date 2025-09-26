@@ -74,7 +74,9 @@ class PatientListScreen extends ConsumerWidget {
                       'The app could not reach the backend at $baseUrl.\n'
                       '• Make sure the API server is running (e.g. `docker-compose up -d`).\n'
                       '• If you are testing on a physical device, replace 10.0.2.2 with your computer\'s LAN IP and rebuild with:\n'
-                      '  flutter run --dart-define=API_BASE_URL=http://<your-ip>:3000/api',
+                      '  flutter run --dart-define=API_BASE_URL=http://<your-ip>:3000/api\n'
+                      '• On IPv6 networks you can provide the components separately instead:\n'
+                      '  flutter run --dart-define=API_HOST=<ipv6-host> --dart-define=API_PORT=3000 --dart-define=API_PATH=api',
                       style: theme.textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 12),
