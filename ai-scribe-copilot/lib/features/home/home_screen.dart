@@ -48,7 +48,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              'The recorder is resilient to network drops, phone calls, and backgrounding. Keep caring for patients—we'll keep recording.',
+              "The recorder is resilient to network drops, phone calls, and backgrounding. Keep caring for patients—we'll keep recording.",
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],

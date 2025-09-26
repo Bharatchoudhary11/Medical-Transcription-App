@@ -35,7 +35,7 @@ class BackgroundTaskManager {
 
   Future<void> stopService() async {
     if (await _service.isRunning()) {
-      await _service.stopService();
+      await _service.invoke('stopService');
     }
   }
 
@@ -47,6 +47,9 @@ class BackgroundTaskManager {
         content: 'Capturing clinical audio securely',
       );
     }
+    service.on('stopService').listen((event) {
+      service.stopSelf();
+    });
   }
 
   static Future<bool> _onIosBackground(ServiceInstance service) async {
