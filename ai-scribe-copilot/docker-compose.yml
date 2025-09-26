@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - AWS_ACCESS_KEY_ID=mock-key
+      - AWS_SECRET_ACCESS_KEY=mock-secret
+      - AWS_REGION=us-east-1
+      - AWS_ENDPOINT=http://localstack:4566
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - localstack
+    networks:
+      - ai-scribe-network
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./localstack-data:/tmp/localstack"
+    networks:
+      - ai-scribe-network
+
+networks:
+  ai-scribe-network:
+    driver: bridge
+
+volumes:
+  localstack-data:
