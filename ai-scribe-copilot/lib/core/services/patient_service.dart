@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../utils/logger.dart';
 import '../models/patient.dart';
 import '../network/api_client.dart';
@@ -10,12 +12,25 @@ class PatientService {
   final Logger logger;
 
   Future<List<Patient>> fetchPatients(String userId) async {
-    final response = await apiClient.get(
-      ApiEndpoints.patients,
-      queryParameters: {'userId': userId},
-    );
-    final data = response['patients'] as List<dynamic>? ?? const [];
-    return data.map((e) => Patient.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+    try {
+      final response = await apiClient.get(
+        ApiEndpoints.patients,
+        queryParameters: {'userId': userId},
+      );
+      final data = response['patients'] as List<dynamic>? ?? const [];
+      return data
+          .map((e) => Patient.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } on DioException catch (error, stackTrace) {
+      logger.e('Failed to fetch patients', error, stackTrace);
+      final connectionIssues = error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout;
+      final message = connectionIssues
+          ? 'Unable to reach the backend at ${ApiEndpoints.baseUrl}. '
+              'Ensure the API server is running and accessible from your simulator or device.'
+          : error.message ?? 'Unexpected error communicating with the backend.';
+      throw Exception(message);
+    }
   }
 
   Future<Patient> addPatient({

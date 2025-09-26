@@ -4,6 +4,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/patient.dart';
 import '../models/recording_session.dart';
 import '../constants/api_constants.dart';
+import '../core/network/http_client_adapter_stub.dart'
+    if (dart.library.io) '../core/network/http_client_adapter_io.dart'
+        as http_client;
 
 class ApiService {
   late final Dio _dio;
@@ -16,6 +19,11 @@ class ApiService {
       receiveTimeout: const Duration(seconds: 30),
       sendTimeout: const Duration(seconds: 30),
     ));
+
+    http_client.configureHttpClientAdapter(
+      _dio,
+      connectionTimeout: const Duration(seconds: 30),
+    );
 
     // Add interceptors for logging and error handling
     _dio.interceptors.add(LogInterceptor(
