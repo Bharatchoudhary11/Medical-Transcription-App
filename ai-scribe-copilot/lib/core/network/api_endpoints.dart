@@ -1,5 +1,7 @@
+import '../config/app_config.dart';
+
 class ApiEndpoints {
-  static const String baseUrl = 'https://api.medical-scribe.example';
+  static String get baseUrl => AppConfig.apiBaseUrl;
 
   static const String startSession = '/v1/upload-session';
   static const String presignedUrl = '/v1/get-presigned-url';

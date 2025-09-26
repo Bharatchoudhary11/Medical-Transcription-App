@@ -1,6 +1,8 @@
+import '../core/config/app_config.dart';
+
 class ApiConstants {
-  // Base URL - Local development backend
-  static const String baseUrl = 'http://localhost:3000/api';
+  // Base URL - resolved dynamically depending on platform and env overrides
+  static String get baseUrl => AppConfig.apiBaseUrl;
   
   // Session Management Endpoints
   static const String uploadSession = '/v1/upload-session';
