@@ -66,6 +66,11 @@ A Flutter app that doctors can trust with their patient consultations. The app r
    If you deploy the backend elsewhere, update the `API_BASE_URL` define to
    match the HTTPS endpoint, e.g. `https://api.example.com`.
 
+   > 💡 **Testing on a physical Android device?** Replace `10.0.2.2` with your
+   > computer's LAN IP address so the phone can reach the backend running on
+   > your machine, then rerun the `flutter run --dart-define=API_BASE_URL=...`
+   > command. Example: `flutter run --dart-define=API_BASE_URL=http://192.168.1.50:3000/api`.
+
 ## 📦 Build Instructions
 
 ### Android APK
@@ -110,6 +115,23 @@ lock file.
 
 If the problem persists, make sure there are no other Android Studio or Gradle
 processes running, then repeat the steps above.
+
+### `DioException [connection timeout]` when loading patients
+
+This usually means the mobile client could not reach the backend REST API.
+
+1. Confirm the backend is running locally via `docker-compose up -d` (or your
+   chosen deployment method) and responds to `http://localhost:3000/health` in a
+   browser or with `curl`.
+2. If you are using the Android emulator, the default `API_BASE_URL` of
+   `http://10.0.2.2:3000/api` should work. For physical devices, replace
+   `10.0.2.2` with the IP address of your development machine on the same Wi-Fi
+   network, e.g. `flutter run --dart-define=API_BASE_URL=http://192.168.1.50:3000/api`.
+3. If the backend is running on another host or port, update the
+   `API_BASE_URL` define to match.
+
+After updating the URL, rebuild/restart the app so the new endpoint is picked
+up.
 
 ## 🧪 Test Scenarios
 
