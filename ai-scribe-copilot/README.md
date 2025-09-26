@@ -89,7 +89,11 @@ If Android Studio or `flutter run` fails with a message similar to:
 Cannot lock file hash cache (.../android/.gradle/<version>/fileHashes) as it has already been locked by this process
 ```
 
-it usually means a previous Gradle process crashed and left a stale lock file.
+We now pin the Android build to Gradle **8.10.2**, which avoids a locking bug
+present in Gradle 8.12 on macOS. If you ran the project before this change, the
+old cache may still be present locally. In that case, or if you continue to see
+the error, it usually means a previous Gradle process crashed and left a stale
+lock file.
 
 1. Stop any running Gradle daemons:
    ```bash
