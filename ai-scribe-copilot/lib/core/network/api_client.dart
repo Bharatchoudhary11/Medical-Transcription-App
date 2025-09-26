@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../../utils/logger.dart';
-import 'api_endpoints.dart';
+import '../config/app_config.dart';
 
 class ApiClient {
   ApiClient({required this.logger}) {
     _dio = Dio(
       BaseOptions(
-        baseUrl: ApiEndpoints.baseUrl,
+        baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 30),
       ),
