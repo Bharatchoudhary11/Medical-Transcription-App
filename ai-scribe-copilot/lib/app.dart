@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'features/home/home_screen.dart';
 import 'shared/providers.dart';
-import 'utils/theme.dart';
 
 class AiScribeApp extends ConsumerWidget {
   const AiScribeApp({super.key});

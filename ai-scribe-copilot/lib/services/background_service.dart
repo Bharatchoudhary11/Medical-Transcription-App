@@ -1,12 +1,8 @@
 import 'dart:async';
-import 'dart:isolate';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
-import 'package:flutter_background_service_ios/flutter_background_service_ios.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../constants/api_constants.dart';
-import 'audio_recording_service.dart';
 import 'api_service.dart';
 import 'local_storage_service.dart';
 
@@ -15,7 +11,6 @@ class BackgroundService {
   factory BackgroundService() => _instance;
   BackgroundService._internal();
 
-  final AudioRecordingService _audioService = AudioRecordingService();
   final ApiService _apiService = ApiService();
   final LocalStorageService _storageService = LocalStorageService();
   final Connectivity _connectivity = Connectivity();
@@ -88,8 +83,7 @@ class BackgroundService {
     service.on('update_notification').listen((event) {
       final title = event?['title'] as String? ?? 'AI Scribe Copilot';
       final content = event?['content'] as String? ?? 'Service running';
-      final isRecording = event?['isRecording'] as bool? ?? false;
-      
+
       if (service is AndroidServiceInstance) {
         service.setForegroundNotificationInfo(
           title: title,

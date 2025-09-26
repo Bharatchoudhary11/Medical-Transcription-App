@@ -35,11 +35,12 @@ class _AudioWaveformViewState extends State<AudioWaveformView> {
     _controller.dispose();
     super.dispose();
   }
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
       padding: const EdgeInsets.all(16),
       child: Column(

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/patient.dart';
-import '../../core/services/patient_service.dart';
 import '../../shared/providers.dart';
 
 final _patientListProvider = FutureProvider<List<Patient>>((ref) async {
