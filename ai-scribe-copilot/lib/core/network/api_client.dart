@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 
 import '../../utils/logger.dart';
 import '../config/app_config.dart';
+import 'http_client_adapter_stub.dart'
+    if (dart.library.io) 'http_client_adapter_io.dart' as http_client;
 
 class ApiClient {
   ApiClient({required this.logger}) {
@@ -13,6 +15,11 @@ class ApiClient {
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
       ),
+    );
+
+    http_client.configureHttpClientAdapter(
+      _dio,
+      connectionTimeout: const Duration(seconds: 30),
     );
   }
 
