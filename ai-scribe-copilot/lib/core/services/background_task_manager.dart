@@ -38,6 +38,7 @@ class BackgroundTaskManager {
     }
   }
 
+  @pragma('vm:entry-point')
   static Future<void> _onStart(ServiceInstance service) async {
     if (service is AndroidServiceInstance) {
       service.setAsForegroundService();
@@ -51,6 +52,7 @@ class BackgroundTaskManager {
     });
   }
 
+  @pragma('vm:entry-point')
   static Future<bool> _onIosBackground(ServiceInstance service) async {
     return true;
   }
