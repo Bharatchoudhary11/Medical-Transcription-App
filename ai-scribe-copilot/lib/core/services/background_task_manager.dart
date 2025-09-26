@@ -34,7 +34,7 @@ class BackgroundTaskManager {
 
   Future<void> stopService() async {
     if (await _service.isRunning()) {
-      await _service.invoke('stopService');
+      _service.invoke('stopService');
     }
   }
 
