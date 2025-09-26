@@ -17,20 +17,28 @@ final themeProvider = Provider<AppTheme>((ref) => createTheme());
 Future<List<Override>> buildOverrides() async {
   final logger = Logger();
   final apiClient = ApiClient(logger: logger);
+  Future<void> safeRun(String description, Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (error, stackTrace) {
+      logger.e('Failed to $description', error, stackTrace);
+    }
+  }
+
   final chunkStore = ChunkPersistenceService(logger: logger);
-  await chunkStore.ensureInitialized();
+  await safeRun('initialize chunk persistence', () => chunkStore.ensureInitialized());
   final backgroundTaskManager = BackgroundTaskManager(logger: logger);
-  await backgroundTaskManager.initialize();
+  await safeRun('initialize background task manager', () => backgroundTaskManager.initialize());
   final connectivityMonitor = ConnectivityMonitor(logger: logger);
-  await connectivityMonitor.initialize();
+  await safeRun('initialize connectivity monitor', () => connectivityMonitor.initialize());
   final interruptionHandler = InterruptionHandler(logger: logger);
-  await interruptionHandler.initialize();
+  await safeRun('initialize interruption handler', () => interruptionHandler.initialize());
   final audioRecorderService = AudioRecorderService(
     logger: logger,
     chunkPersistenceService: chunkStore,
     interruptionHandler: interruptionHandler,
   );
-  await audioRecorderService.initialize();
+  await safeRun('initialize audio recorder service', () => audioRecorderService.initialize());
   final uploadSessionService = UploadSessionService(
     apiClient: apiClient,
     logger: logger,
@@ -42,7 +50,7 @@ Future<List<Override>> buildOverrides() async {
     connectivityMonitor: connectivityMonitor,
     backgroundTaskManager: backgroundTaskManager,
   );
-  await chunkUploader.resumePendingBacklog();
+  await safeRun('resume pending chunk backlog', () => chunkUploader.resumePendingBacklog());
   final patientService = PatientService(
     apiClient: apiClient,
     logger: logger,
