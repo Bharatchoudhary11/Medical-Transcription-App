@@ -70,6 +70,15 @@ A Flutter app that doctors can trust with their patient consultations. The app r
    > computer's LAN IP address so the phone can reach the backend running on
    > your machine, then rerun the `flutter run --dart-define=API_BASE_URL=...`
    > command. Example: `flutter run --dart-define=API_BASE_URL=http://192.168.1.50:3000/api`.
+   >
+   > For IPv6 networks you can skip the square bracket syntax entirely by
+   > providing the URL components separately:
+   > ```bash
+   > flutter run \
+   >   --dart-define=API_HOST=2409:40d4:2405:9e6b:8000:: \
+   >   --dart-define=API_PORT=3000 \
+   >   --dart-define=API_PATH=api
+   > ```
 
 ## 📦 Build Instructions
 
@@ -128,7 +137,8 @@ This usually means the mobile client could not reach the backend REST API.
    `10.0.2.2` with the IP address of your development machine on the same Wi-Fi
    network, e.g. `flutter run --dart-define=API_BASE_URL=http://192.168.1.50:3000/api`.
 3. If the backend is running on another host or port, update the
-   `API_BASE_URL` define to match.
+   `API_BASE_URL` define (or the `API_HOST`/`API_PORT`/`API_PATH` components)
+   to match.
 
 After updating the URL, rebuild/restart the app so the new endpoint is picked
 up.
