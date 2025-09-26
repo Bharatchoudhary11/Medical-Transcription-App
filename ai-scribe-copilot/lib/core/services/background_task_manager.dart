@@ -4,6 +4,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 
 import '../../utils/logger.dart';
 
+@pragma('vm:entry-point')
 class BackgroundTaskManager {
   BackgroundTaskManager({required this.logger});
 
