@@ -6,6 +6,7 @@ import '../../utils/logger.dart';
 
 @pragma('vm:entry-point')
 class BackgroundTaskManager {
+  @pragma('vm:entry-point')
   BackgroundTaskManager({required this.logger});
 
   final Logger logger;
