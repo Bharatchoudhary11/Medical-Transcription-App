@@ -79,6 +79,34 @@ The APK will be available at `build/app/outputs/flutter-apk/app-release.apk`
 flutter build ios --release --dart-define=API_BASE_URL=https://your.api.example
 ```
 
+## 🛠️ Troubleshooting
+
+### Android Gradle "Cannot lock file hash cache" error
+
+If Android Studio or `flutter run` fails with a message similar to:
+
+```
+Cannot lock file hash cache (.../android/.gradle/<version>/fileHashes) as it has already been locked by this process
+```
+
+it usually means a previous Gradle process crashed and left a stale lock file.
+
+1. Stop any running Gradle daemons:
+   ```bash
+   ./gradlew --stop
+   ```
+2. Delete the stale cache (safe to remove, Gradle will recreate it):
+   ```bash
+   rm -rf android/.gradle
+   ```
+3. Re-run your build command:
+   ```bash
+   flutter run
+   ```
+
+If the problem persists, make sure there are no other Android Studio or Gradle
+processes running, then repeat the steps above.
+
 ## 🧪 Test Scenarios
 
 ### Pass/Fail Tests
