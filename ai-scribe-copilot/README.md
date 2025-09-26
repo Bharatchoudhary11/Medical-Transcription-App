@@ -56,24 +56,27 @@ A Flutter app that doctors can trust with their patient consultations. The app r
 
 4. **Run the app**
    ```bash
-   # Android
-   flutter run
-   
-   # iOS
-   flutter run -d ios
+   # Android (emulator connects to 10.0.2.2 by default)
+   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
+
+   # iOS / macOS simulators default to localhost so the define is optional
+   flutter run --dart-define=API_BASE_URL=http://localhost:3000/api
    ```
+
+   If you deploy the backend elsewhere, update the `API_BASE_URL` define to
+   match the HTTPS endpoint, e.g. `https://api.example.com`.
 
 ## 📦 Build Instructions
 
 ### Android APK
 ```bash
-flutter build apk --release
+flutter build apk --release --dart-define=API_BASE_URL=https://your.api.example
 ```
 The APK will be available at `build/app/outputs/flutter-apk/app-release.apk`
 
 ### iOS
 ```bash
-flutter build ios --release
+flutter build ios --release --dart-define=API_BASE_URL=https://your.api.example
 ```
 
 ## 🧪 Test Scenarios
