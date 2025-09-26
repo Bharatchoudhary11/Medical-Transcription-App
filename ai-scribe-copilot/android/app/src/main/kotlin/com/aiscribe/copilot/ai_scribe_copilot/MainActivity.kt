@@ -1,5 +1,6 @@
 package com.aiscribe.copilot.ai_scribe_copilot
 
+import android.Manifest
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -8,6 +9,8 @@ import android.os.Build
 import android.os.Bundle
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -25,7 +28,38 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        registerPhoneStateListener()
+        ensurePhoneStatePermission()
+    }
+
+    private fun ensurePhoneStatePermission() {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_PHONE_STATE
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            registerPhoneStateListener()
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_PHONE_STATE),
+                PERMISSION_REQUEST_READ_PHONE_STATE
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_READ_PHONE_STATE &&
+            grantResults.isNotEmpty() &&
+            grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            registerPhoneStateListener()
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -108,12 +142,23 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun registerPhoneStateListener() {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_PHONE_STATE
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (!hasPermission) {
+            return
+        }
+
         val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-        phoneStateListener = object : PhoneStateListener() {
-            override fun onCallStateChanged(state: Int, phoneNumber: String?) {
-                when (state) {
-                    TelephonyManager.CALL_STATE_OFFHOOK, TelephonyManager.CALL_STATE_RINGING -> emitEvent("phoneCallStarted")
-                    TelephonyManager.CALL_STATE_IDLE -> emitEvent("phoneCallEnded")
+        if (phoneStateListener == null) {
+            phoneStateListener = object : PhoneStateListener() {
+                override fun onCallStateChanged(state: Int, phoneNumber: String?) {
+                    when (state) {
+                        TelephonyManager.CALL_STATE_OFFHOOK, TelephonyManager.CALL_STATE_RINGING -> emitEvent("phoneCallStarted")
+                        TelephonyManager.CALL_STATE_IDLE -> emitEvent("phoneCallEnded")
+                    }
                 }
             }
         }
@@ -130,5 +175,8 @@ class MainActivity : FlutterActivity() {
         super.onDestroy()
         val telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         phoneStateListener?.let { telephonyManager.listen(it, PhoneStateListener.LISTEN_NONE) }
+    }
+    companion object {
+        private const val PERMISSION_REQUEST_READ_PHONE_STATE = 1001
     }
 }
