@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../utils/logger.dart';
+import '../constants/user_constants.dart';
 import '../models/patient.dart';
 import '../network/api_client.dart';
 import '../network/api_endpoints.dart';
@@ -11,7 +12,9 @@ class PatientService {
   final ApiClient apiClient;
   final Logger logger;
 
-  Future<List<Patient>> fetchPatients(String userId) async {
+  Future<List<Patient>> fetchPatients([
+    String userId = UserConstants.demoUserId,
+  ]) async {
     try {
       final response = await apiClient.get(
         ApiEndpoints.patients,
@@ -37,11 +40,13 @@ class PatientService {
     required String name,
     required DateTime? dateOfBirth,
     required String? mrn,
+    String userId = UserConstants.demoUserId,
   }) async {
     final response = await apiClient.post(
       ApiEndpoints.addPatient,
       data: {
         'name': name,
+        'userId': userId,
         if (dateOfBirth != null) 'dateOfBirth': dateOfBirth.toIso8601String(),
         if (mrn != null) 'mrn': mrn,
       },
