@@ -19,12 +19,14 @@ class RecordingScreen extends ConsumerStatefulWidget {
 }
 
 class _RecordingScreenState extends ConsumerState<RecordingScreen> {
+  late final RecordingController _controller;
+
   @override
   void initState() {
     super.initState();
+    _controller = ref.read(recordingControllerProvider.notifier);
     Future.microtask(() async {
-      final controller = ref.read(recordingControllerProvider.notifier);
-      await controller.start(
+      await _controller.start(
         widget.patient.id,
         widget.patient.name,
         UserConstants.demoUserId,
@@ -34,8 +36,7 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
 
   @override
   void dispose() {
-    final controller = ref.read(recordingControllerProvider.notifier);
-    unawaited(controller.stop());
+    unawaited(_controller.stop());
     super.dispose();
   }
 
