@@ -105,6 +105,7 @@ class ChunkUploader {
       final presigned = await uploadSessionService.requestPresignedUrl(
         chunk.sessionId,
         chunk.sequence,
+        mimeType: 'audio/pcm',
       );
       final file = File(chunk.filePath);
       if (!await file.exists()) {
@@ -112,15 +113,11 @@ class ChunkUploader {
         await chunkStore.deleteChunk(chunk.id);
         return;
       }
-      final bytes = await file.readAsBytes();
-      await uploadSessionService.uploadChunk(
-        presigned.url,
-        bytes,
-        headers: presigned.headers,
-      );
+      await uploadSessionService.uploadChunk(presigned, file);
       await uploadSessionService.notifyChunkUploaded(
         chunk.sessionId,
         chunk.sequence,
+        request: presigned,
       );
       await chunkStore.markUploaded(chunk.id);
       await chunkStore.deleteChunk(chunk.id);
