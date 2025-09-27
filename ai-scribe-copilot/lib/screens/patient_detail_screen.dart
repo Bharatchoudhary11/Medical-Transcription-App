@@ -7,6 +7,7 @@ import '../models/recording_session.dart';
 import '../services/audio_recording_service.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
+import '../utils/permission_utils.dart';
 import '../widgets/recording_session_list_widget.dart';
 
 class PatientDetailScreen extends ConsumerStatefulWidget {
@@ -82,9 +83,11 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
 
   Future<bool> _ensureMicrophonePermission() async {
     final status = await Permission.microphone.status;
-    final permission = status.isGranted ? status : await Permission.microphone.request();
+    final permission = hasMicrophoneAccess(status)
+        ? status
+        : await Permission.microphone.request();
 
-    if (!permission.isGranted) {
+    if (!hasMicrophoneAccess(permission)) {
       if (mounted) {
         final snackBar = SnackBar(
           content: const Text('Microphone permission is required for recording'),
