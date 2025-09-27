@@ -37,12 +37,17 @@ class AudioRecorderService {
 
   Stream<RecordingChunk> get chunkStream => _chunkStreamController.stream;
 
-  Future<void> initialize() async {
+  Future<void> initialize({bool requestPermission = true}) async {
     if (_initialized) return;
-    final status = await Permission.microphone.status;
+    var status = await Permission.microphone.status;
     if (!hasMicrophoneAccess(status)) {
-      logger.d('Microphone permission not granted; deferring recorder initialization.');
-      return;
+      if (requestPermission && !status.isPermanentlyDenied && !status.isRestricted) {
+        status = await Permission.microphone.request();
+      }
+      if (!hasMicrophoneAccess(status)) {
+        logger.d('Microphone permission not granted; deferring recorder initialization.');
+        return;
+      }
     }
     await _recorder.openRecorder();
     _initialized = true;
@@ -63,7 +68,7 @@ class AudioRecorderService {
 
   Future<void> startRecording(String sessionId, {bool resetSequence = false}) async {
     if (!_initialized) {
-      await initialize();
+      await initialize(requestPermission: false);
       if (!_initialized) {
         logger.w('Recorder initialization deferred because microphone permission is missing.');
         throw const AudioRecorderPermissionException();
