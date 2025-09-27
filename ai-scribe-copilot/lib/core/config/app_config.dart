@@ -60,7 +60,7 @@ class AppConfig {
   }) {
     final trimmedBaseOverride = baseOverride.trim();
     if (trimmedBaseOverride.isNotEmpty) {
-      return trimmedBaseOverride;
+      return _ensureTrailingSlash(trimmedBaseOverride);
     }
 
     final trimmedHostOverride = hostOverride.trim();
@@ -94,23 +94,30 @@ class AppConfig {
         port: port,
         pathSegments: pathSegments,
       );
-      return uri.toString();
+      return _ensureTrailingSlash(uri.toString());
     }
 
     if (isWeb) {
-      return 'http://localhost:3000/api';
+      return 'http://localhost:3000/api/';
     }
 
     switch (platform) {
       case TargetPlatform.android:
-        return 'http://10.0.2.2:3000/api';
+        return 'http://10.0.2.2:3000/api/';
       case TargetPlatform.iOS:
       case TargetPlatform.macOS:
       case TargetPlatform.windows:
       case TargetPlatform.linux:
-        return 'http://localhost:3000/api';
+        return 'http://localhost:3000/api/';
       case TargetPlatform.fuchsia:
-        return 'http://localhost:3000/api';
+        return 'http://localhost:3000/api/';
     }
+  }
+
+  static String _ensureTrailingSlash(String baseUrl) {
+    if (baseUrl.endsWith('/')) {
+      return baseUrl;
+    }
+    return '$baseUrl/';
   }
 }
