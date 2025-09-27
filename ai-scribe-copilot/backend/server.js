@@ -8,11 +8,16 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const WebSocket = require('ws');
 
 const app = express();
 const PORT = Number.parseInt(process.env.PORT ?? '3000', 10);
 const PREFERRED_HOST = process.env.HOST || '::';
 const FALLBACK_HOST = '0.0.0.0';
+const HEARTBEAT_INTERVAL_MS = 30000;
+
+let websocketServer = null;
 
 const IPV6_FALLBACK_ERRORS = new Set([
   'EADDRNOTAVAIL',
@@ -54,8 +59,215 @@ function logServerDetails(server) {
   console.log(`Health check: http://${urlHost}:${port}/health`);
 }
 
+function safeJsonParse(rawPayload) {
+  if (rawPayload === undefined || rawPayload === null) {
+    return { ok: false };
+  }
+
+  const payloadText = Buffer.isBuffer(rawPayload)
+    ? rawPayload.toString('utf8')
+    : String(rawPayload);
+
+  if (!payloadText.trim()) {
+    return { ok: false };
+  }
+
+  try {
+    return { ok: true, value: JSON.parse(payloadText) };
+  } catch (error) {
+    return { ok: false, error };
+  }
+}
+
+function setupWebSocketServer(server) {
+  const wss = new WebSocket.Server({ noServer: true });
+  websocketServer = wss;
+
+  function heartbeat() {
+    this.isAlive = true;
+  }
+
+  wss.on('connection', (socket, request) => {
+    socket.isAlive = true;
+
+    const remoteAddress = request?.socket?.remoteAddress || 'unknown';
+    console.log(`WebSocket client connected from ${remoteAddress}.`);
+
+    socket.on('pong', heartbeat);
+
+    socket.on('message', (rawPayload) => {
+      const parsed = safeJsonParse(rawPayload);
+      if (!parsed.ok) {
+        const errorMessage = {
+          event: 'error',
+          message: 'Invalid JSON payload received on WebSocket channel.',
+          timestamp: new Date().toISOString()
+        };
+
+        if (parsed.error) {
+          errorMessage.details = parsed.error.message;
+        }
+
+        socket.send(JSON.stringify(errorMessage));
+        return;
+      }
+
+      const incoming = parsed.value || {};
+      const incomingType = incoming.type || 'unknown';
+
+      if (incomingType === 'ping') {
+        socket.send(
+          JSON.stringify({
+            event: 'pong',
+            timestamp: new Date().toISOString()
+          }),
+        );
+        return;
+      }
+
+      socket.send(
+        JSON.stringify({
+          event: 'acknowledged',
+          message: `Received message of type "${incomingType}".`,
+          timestamp: new Date().toISOString()
+        }),
+      );
+    });
+
+    socket.on('close', () => {
+      socket.isAlive = false;
+      console.log(`WebSocket client from ${remoteAddress} disconnected.`);
+    });
+
+    socket.send(
+      JSON.stringify({
+        event: 'connected',
+        message: 'Connected to the AI Scribe Copilot mock streaming channel.',
+        timestamp: new Date().toISOString()
+      }),
+    );
+  });
+
+  const heartbeatTimer = setInterval(() => {
+    wss.clients.forEach((client) => {
+      if (client.isAlive === false) {
+        client.terminate();
+        return;
+      }
+
+      client.isAlive = false;
+      client.ping();
+    });
+  }, HEARTBEAT_INTERVAL_MS);
+
+  wss.on('close', () => {
+    clearInterval(heartbeatTimer);
+  });
+
+  server.on('upgrade', (request, socket, head) => {
+    if (request.url !== '/ws') {
+      socket.destroy();
+      return;
+    }
+
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  });
+
+  server.on('close', () => {
+    wss.clients.forEach((client) => {
+      if (
+        client.readyState === WebSocket.OPEN ||
+        client.readyState === WebSocket.CLOSING
+      ) {
+        client.terminate();
+      }
+    });
+
+    try {
+      wss.close();
+    } catch (error) {
+      console.error('Error while closing WebSocket server:', error);
+    }
+
+    if (websocketServer === wss) {
+      websocketServer = null;
+    }
+  });
+
+  return wss;
+}
+
+function broadcastWebSocketEvent(event, payload = {}) {
+  if (!websocketServer) {
+    return;
+  }
+
+  const message = JSON.stringify({
+    event,
+    payload,
+    timestamp: new Date().toISOString()
+  });
+
+  websocketServer.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
+
+function createServerWithWebSockets() {
+  const server = http.createServer(app);
+  const wss = setupWebSocketServer(server);
+  return { server, wss };
+}
+
+function closeServer(server, wss, onClosed) {
+  const finish = () => {
+    if (typeof onClosed === 'function') {
+      onClosed();
+    }
+  };
+
+  if (server.listening) {
+    server.close((closeError) => {
+      if (closeError) {
+        console.error('Error while closing server:', closeError);
+      }
+      finish();
+    });
+    return;
+  }
+
+  if (wss) {
+    wss.clients.forEach((client) => {
+      if (
+        client.readyState === WebSocket.OPEN ||
+        client.readyState === WebSocket.CLOSING
+      ) {
+        client.terminate();
+      }
+    });
+
+    try {
+      wss.close();
+    } catch (error) {
+      console.error('Error while closing WebSocket server:', error);
+    }
+
+    if (websocketServer === wss) {
+      websocketServer = null;
+    }
+  }
+
+  finish();
+}
+
 function startServer(host, { isFallback = false } = {}) {
-  const server = app.listen({ port: PORT, host, ipv6Only: false }, () => {
+  const { server, wss } = createServerWithWebSockets();
+
+  server.listen({ port: PORT, host, ipv6Only: false }, () => {
     logServerDetails(server);
   });
 
@@ -68,7 +280,7 @@ function startServer(host, { isFallback = false } = {}) {
       console.warn(
         `Could not bind to ${host} (${error.code}). Falling back to ${FALLBACK_HOST}.`,
       );
-      startServer(FALLBACK_HOST, { isFallback: true });
+      closeServer(server, wss, () => startServer(FALLBACK_HOST, { isFallback: true }));
       return;
     }
 
@@ -145,6 +357,8 @@ app.post('/api/v1/upload-session', (req, res) => {
 
     sessions.set(sessionId, session);
 
+    broadcastWebSocketEvent('sessionCreated', { session });
+
     res.json({ sessionId, message: 'Session created successfully' });
   } catch (error) {
     console.error('Error creating session:', error);
@@ -173,9 +387,14 @@ app.post('/api/v1/get-presigned-url', (req, res) => {
 app.put('/api/upload-chunk/:sessionId/:chunkNumber', upload.single('audio'), (req, res) => {
   try {
     const { sessionId, chunkNumber } = req.params;
-    
+    const parsedChunkNumber = Number.parseInt(chunkNumber, 10);
+
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    if (Number.isNaN(parsedChunkNumber)) {
+      return res.status(400).json({ error: 'chunkNumber must be an integer' });
     }
 
     // Store chunk info
@@ -183,7 +402,7 @@ app.put('/api/upload-chunk/:sessionId/:chunkNumber', upload.single('audio'), (re
     const chunk = {
       id: chunkId,
       sessionId,
-      chunkNumber: parseInt(chunkNumber),
+      chunkNumber: parsedChunkNumber,
       filePath: req.file.path,
       sizeBytes: req.file.size,
       uploadedAt: new Date().toISOString()
@@ -199,6 +418,13 @@ app.put('/api/upload-chunk/:sessionId/:chunkNumber', upload.single('audio'), (re
       session.updatedAt = new Date().toISOString();
       sessions.set(sessionId, session);
     }
+
+    broadcastWebSocketEvent('chunkUploaded', {
+      sessionId,
+      chunkNumber: parsedChunkNumber,
+      chunkId,
+      sizeBytes: req.file.size
+    });
 
     res.json({ message: 'Chunk uploaded successfully', chunkId });
   } catch (error) {
@@ -216,7 +442,13 @@ app.post('/api/v1/notify-chunk-uploaded', (req, res) => {
     }
 
     console.log(`Chunk ${chunkNumber} uploaded for session ${sessionId}`);
-    
+
+    const parsedChunkNumber = Number.parseInt(chunkNumber, 10);
+    broadcastWebSocketEvent('chunkNotification', {
+      sessionId,
+      chunkNumber: Number.isNaN(parsedChunkNumber) ? chunkNumber : parsedChunkNumber
+    });
+
     res.json({ message: 'Chunk upload notification received' });
   } catch (error) {
     console.error('Error notifying chunk upload:', error);
@@ -265,6 +497,8 @@ app.post('/api/v1/add-patient-ext', (req, res) => {
 
     patients.set(patient.id, patient);
 
+    broadcastWebSocketEvent('patientUpserted', { patient });
+
     res.json(patient);
   } catch (error) {
     console.error('Error adding patient:', error);
@@ -292,10 +526,15 @@ app.get('/api/v1/transcription/:sessionId', (req, res) => {
     const { sessionId } = req.params;
     
     // Mock transcription
-    const transcription = `This is a mock transcription for session ${sessionId}. 
-    In a real implementation, this would be generated by AI transcription services 
+    const transcription = `This is a mock transcription for session ${sessionId}.
+    In a real implementation, this would be generated by AI transcription services
     like AWS Transcribe, Google Speech-to-Text, or Azure Speech Services.`;
-    
+
+    broadcastWebSocketEvent('transcriptionGenerated', {
+      sessionId,
+      transcription
+    });
+
     res.json({ transcription });
   } catch (error) {
     console.error('Error getting transcription:', error);
