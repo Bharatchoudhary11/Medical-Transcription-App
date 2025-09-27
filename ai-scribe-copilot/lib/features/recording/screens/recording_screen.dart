@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/user_constants.dart';
 import '../../../core/models/patient.dart';
 import '../controllers/recording_controller.dart';
 import '../state/recording_state.dart';
@@ -23,7 +24,11 @@ class _RecordingScreenState extends ConsumerState<RecordingScreen> {
     super.initState();
     Future.microtask(() async {
       final controller = ref.read(recordingControllerProvider.notifier);
-      await controller.start(widget.patient.id, widget.patient.name, 'demo-user');
+      await controller.start(
+        widget.patient.id,
+        widget.patient.name,
+        UserConstants.demoUserId,
+      );
     });
   }
 

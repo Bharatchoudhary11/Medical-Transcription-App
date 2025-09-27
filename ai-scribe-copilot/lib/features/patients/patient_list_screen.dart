@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/user_constants.dart';
 import '../../core/models/patient.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../shared/providers.dart';
 
 final _patientListProvider = FutureProvider<List<Patient>>((ref) async {
   final patientService = ref.watch(patientServiceProvider);
-  const demoUserId = 'demo-user';
-  return patientService.fetchPatients(demoUserId);
+  return patientService.fetchPatients(UserConstants.demoUserId);
 });
 
 class PatientListScreen extends ConsumerWidget {
@@ -184,6 +184,7 @@ class PatientListScreen extends ConsumerWidget {
                         name: nameController.text,
                         dateOfBirth: dob,
                         mrn: mrnController.text.isEmpty ? null : mrnController.text,
+                        userId: UserConstants.demoUserId,
                       );
                       ref.invalidate(_patientListProvider);
                       if (context.mounted) {
