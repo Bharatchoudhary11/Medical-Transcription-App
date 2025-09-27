@@ -10,7 +10,7 @@ void main() {
           baseOverride: '  https://example.com/api  ',
           platform: TargetPlatform.android,
         ),
-        'https://example.com/api',
+        'https://example.com/api/',
       );
     });
 
@@ -22,7 +22,7 @@ void main() {
           pathOverride: 'api',
           schemeOverride: 'http',
         ),
-        'http://[2409:40d4:2405:9e6b:8000::]:3000/api',
+        'http://[2409:40d4:2405:9e6b:8000::]:3000/api/',
       );
     });
 
@@ -34,7 +34,7 @@ void main() {
           pathOverride: '/v1//patients/',
           schemeOverride: 'https',
         ),
-        'https://api.example.com:8080/v1/patients',
+        'https://api.example.com:8080/v1/patients/',
       );
     });
 
@@ -54,7 +54,7 @@ void main() {
           isWeb: true,
           platform: TargetPlatform.android,
         ),
-        'http://localhost:3000/api',
+        'http://localhost:3000/api/',
       );
     });
 
@@ -63,7 +63,7 @@ void main() {
         AppConfig.resolveBaseUrlForTest(
           platform: TargetPlatform.android,
         ),
-        'http://10.0.2.2:3000/api',
+        'http://10.0.2.2:3000/api/',
       );
     });
 
@@ -72,7 +72,7 @@ void main() {
         AppConfig.resolveBaseUrlForTest(
           platform: TargetPlatform.windows,
         ),
-        'http://localhost:3000/api',
+        'http://localhost:3000/api/',
       );
     });
   });
