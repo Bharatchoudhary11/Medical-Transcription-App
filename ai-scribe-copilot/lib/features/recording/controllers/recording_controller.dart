@@ -12,6 +12,7 @@ import '../../../core/services/interruption_handler.dart';
 import '../../../core/services/upload_session_service.dart';
 import '../../../shared/providers.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/permission_utils.dart';
 import '../state/recording_state.dart';
 
 final recordingControllerProvider =
@@ -74,8 +75,11 @@ class RecordingController extends StateNotifier<RecordingState> {
   Future<void> start(String patientId, String patientName, String userId) async {
     state = state.copyWith(lifecycle: RecordingLifecycle.preparing, patientName: patientName);
     try {
-      final micStatus = await Permission.microphone.request();
-      if (!micStatus.isGranted) {
+      final currentStatus = await Permission.microphone.status;
+      final micStatus = hasMicrophoneAccess(currentStatus)
+          ? currentStatus
+          : await Permission.microphone.request();
+      if (!hasMicrophoneAccess(micStatus)) {
         state = state.copyWith(
           lifecycle: RecordingLifecycle.error,
           errorMessage: 'Microphone permission is required to record.',

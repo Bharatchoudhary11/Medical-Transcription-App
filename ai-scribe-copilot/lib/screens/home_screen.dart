@@ -6,6 +6,7 @@ import '../models/recording_session.dart';
 import '../services/audio_recording_service.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
+import '../utils/permission_utils.dart';
 import '../widgets/patient_list_widget.dart';
 import '../widgets/recording_controls_widget.dart';
 import '../widgets/audio_visualizer_widget.dart';
@@ -92,11 +93,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<bool> _requestPermissions() async {
     final microphoneStatus = await Permission.microphone.status;
-    final microphonePermission = microphoneStatus.isGranted
+    final microphonePermission = hasMicrophoneAccess(microphoneStatus)
         ? microphoneStatus
         : await Permission.microphone.request();
 
-    if (!microphonePermission.isGranted) {
+    if (!hasMicrophoneAccess(microphonePermission)) {
       if (mounted) {
         final snackBar = SnackBar(
           content: const Text('Microphone permission is required for recording'),

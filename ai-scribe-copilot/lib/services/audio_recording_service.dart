@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../utils/permission_utils.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:uuid/uuid.dart';
 import '../models/audio_chunk.dart';
@@ -123,12 +125,12 @@ class AudioRecordingService {
 
   Future<void> _ensureMicrophonePermissionGranted() async {
     final status = await Permission.microphone.status;
-    if (status.isGranted) {
+    if (hasMicrophoneAccess(status)) {
       return;
     }
 
     final result = await Permission.microphone.request();
-    if (!result.isGranted) {
+    if (!hasMicrophoneAccess(result)) {
       throw Exception('Microphone permission denied');
     }
   }
