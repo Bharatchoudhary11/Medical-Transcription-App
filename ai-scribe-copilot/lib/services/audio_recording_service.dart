@@ -25,12 +25,13 @@ class AudioRecordingService {
   Timer? _chunkTimer;
   Timer? _retryTimer;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
-  
+
   RecordingSession? _currentSession;
   int _chunkSequence = 0;
   bool _isRecording = false;
   bool _isPaused = false;
   String? _currentRecordingPath;
+  bool _isInitialized = false;
   
   final StreamController<RecordingSession> _sessionController = 
       StreamController<RecordingSession>.broadcast();
@@ -51,19 +52,13 @@ class AudioRecordingService {
 
   Future<bool> initialize() async {
     try {
-      // Request permissions
-      final microphonePermission = await Permission.microphone.request();
-      if (!microphonePermission.isGranted) {
-        throw Exception('Microphone permission denied');
-      }
+      await _ensureMicrophonePermissionGranted();
+      await _ensureRecorderInitialized();
 
-      // Initialize flutter sound
-      await _recorder.openRecorder();
-
-    // Set up connectivity monitoring
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-      (results) => _onConnectivityChanged(results.first),
-    );
+      // Set up connectivity monitoring
+      _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
+        (results) => _onConnectivityChanged(results.first),
+      );
 
       return true;
     } catch (e) {
@@ -78,6 +73,9 @@ class AudioRecordingService {
     }
 
     try {
+      await _ensureMicrophonePermissionGranted();
+      await _ensureRecorderInitialized();
+
       // Create new session
       _currentSession = RecordingSession(
         id: _uuid.v4(),
@@ -121,6 +119,27 @@ class AudioRecordingService {
       print('Failed to start recording: $e');
       return false;
     }
+  }
+
+  Future<void> _ensureMicrophonePermissionGranted() async {
+    final status = await Permission.microphone.status;
+    if (status.isGranted) {
+      return;
+    }
+
+    final result = await Permission.microphone.request();
+    if (!result.isGranted) {
+      throw Exception('Microphone permission denied');
+    }
+  }
+
+  Future<void> _ensureRecorderInitialized() async {
+    if (_isInitialized) {
+      return;
+    }
+
+    await _recorder.openRecorder();
+    _isInitialized = true;
   }
 
   Future<bool> pauseRecording() async {
