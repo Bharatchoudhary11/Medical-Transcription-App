@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import '../models/patient.dart';
 import '../models/recording_session.dart';
 import '../services/audio_recording_service.dart';
@@ -78,7 +80,36 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     }
   }
 
+  Future<bool> _ensureMicrophonePermission() async {
+    final status = await Permission.microphone.status;
+    final permission = status.isGranted ? status : await Permission.microphone.request();
+
+    if (!permission.isGranted) {
+      if (mounted) {
+        final snackBar = SnackBar(
+          content: const Text('Microphone permission is required for recording'),
+          backgroundColor: Colors.red,
+          action: permission.isPermanentlyDenied
+              ? SnackBarAction(
+                  label: 'Settings',
+                  textColor: Colors.white,
+                  onPressed: openAppSettings,
+                )
+              : null,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      }
+      return false;
+    }
+
+    return true;
+  }
+
   Future<void> _startRecording() async {
+    final hasPermission = await _ensureMicrophonePermission();
+    if (!hasPermission) {
+      return;
+    }
     try {
       final success = await _audioService.startRecording(
         widget.patient.id,

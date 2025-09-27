@@ -90,35 +90,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  Future<void> _requestPermissions() async {
-    final microphonePermission = await Permission.microphone.request();
+  Future<bool> _requestPermissions() async {
+    final microphoneStatus = await Permission.microphone.status;
+    final microphonePermission = microphoneStatus.isGranted
+        ? microphoneStatus
+        : await Permission.microphone.request();
+
     if (!microphonePermission.isGranted) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Microphone permission is required for recording'),
-            backgroundColor: Colors.red,
-          ),
+        final snackBar = SnackBar(
+          content: const Text('Microphone permission is required for recording'),
+          backgroundColor: Colors.red,
+          action: microphonePermission.isPermanentlyDenied
+              ? SnackBarAction(
+                  label: 'Settings',
+                  textColor: Colors.white,
+                  onPressed: openAppSettings,
+                )
+              : null,
         );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
-      return;
+      return false;
     }
 
     final notificationPermission = await Permission.notification.request();
-    if (!notificationPermission.isGranted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Notification permission is required for background recording'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
+    if (!notificationPermission.isGranted && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notification permission is required for background recording'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
+
+    return true;
   }
 
   Future<void> _startRecording(Patient patient) async {
-    await _requestPermissions();
+    final hasPermission = await _requestPermissions();
+    if (!hasPermission) {
+      return;
+    }
     
     try {
       final success = await _audioService.startRecording(patient.id, 'current_user_id');
