@@ -4,8 +4,10 @@ import 'dart:typed_data';
 
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../utils/logger.dart';
+import '../../utils/permission_utils.dart';
 import '../models/recording_chunk.dart';
 import 'chunk_persistence_service.dart';
 import 'interruption_handler.dart';
@@ -37,6 +39,11 @@ class AudioRecorderService {
 
   Future<void> initialize() async {
     if (_initialized) return;
+    final status = await Permission.microphone.status;
+    if (!hasMicrophoneAccess(status)) {
+      logger.d('Microphone permission not granted; deferring recorder initialization.');
+      return;
+    }
     await _recorder.openRecorder();
     _initialized = true;
   }
@@ -45,7 +52,10 @@ class AudioRecorderService {
     await _recordingSubscription?.cancel();
     await _pcmStreamSubscription?.cancel();
     await _pcmStreamController?.close();
-    await _recorder.closeRecorder();
+    if (_initialized) {
+      await _recorder.closeRecorder();
+      _initialized = false;
+    }
     await _chunkStreamController.close();
   }
 
@@ -54,6 +64,10 @@ class AudioRecorderService {
   Future<void> startRecording(String sessionId, {bool resetSequence = false}) async {
     if (!_initialized) {
       await initialize();
+      if (!_initialized) {
+        logger.w('Recorder initialization deferred because microphone permission is missing.');
+        throw const AudioRecorderPermissionException();
+      }
     }
     if (resetSequence) {
       _chunkSequence = 0;
@@ -136,4 +150,11 @@ class AudioRecorderService {
       }
     }
   }
+}
+
+class AudioRecorderPermissionException implements Exception {
+  const AudioRecorderPermissionException();
+
+  @override
+  String toString() => 'Microphone permission is required to record.';
 }
