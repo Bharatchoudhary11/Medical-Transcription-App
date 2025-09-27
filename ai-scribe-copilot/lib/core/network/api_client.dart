@@ -50,16 +50,39 @@ class ApiClient {
     return _decode(response);
   }
 
-  Future<Response<dynamic>> putRaw(
-    String url, {
-    required List<int> data,
+  Future<Response<dynamic>> uploadRaw(
+    String url,
+    List<int> data, {
     Map<String, dynamic>? headers,
+    String method = 'PUT',
   }) async {
-    logger.d('PUT $url (raw upload)');
-    return _dio.put(
+    final upperMethod = method.toUpperCase();
+    logger.d('$upperMethod $url (raw upload)');
+    return _dio.request(
       url,
       data: Stream.fromIterable([data]),
-      options: Options(headers: headers),
+      options: Options(
+        method: upperMethod,
+        headers: headers,
+      ),
+    );
+  }
+
+  Future<Response<dynamic>> send(
+    String method,
+    String url, {
+    dynamic data,
+    Map<String, dynamic>? headers,
+  }) async {
+    final upperMethod = method.toUpperCase();
+    logger.d('$upperMethod $url');
+    return _dio.request(
+      url,
+      data: data,
+      options: Options(
+        method: upperMethod,
+        headers: headers,
+      ),
     );
   }
 
