@@ -46,6 +46,19 @@ class PatientService {
         if (mrn != null) 'mrn': mrn,
       },
     );
-    return Patient.fromJson(Map<String, dynamic>.from(response['patient'] as Map));
+    final payload = response['patient'];
+    if (payload is Map) {
+      return Patient.fromJson(
+        Map<String, dynamic>.from(payload as Map<dynamic, dynamic>),
+      );
+    }
+
+    if (response.isNotEmpty) {
+      return Patient.fromJson(
+        Map<String, dynamic>.from(response as Map<dynamic, dynamic>),
+      );
+    }
+
+    throw StateError('Invalid response when adding patient: $response');
   }
 }
